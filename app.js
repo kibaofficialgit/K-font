@@ -6,6 +6,7 @@ function toggleMenu() {
 
 function openGuide() {
   document.getElementById("guideModal").style.display = "block";
+  document.getElementById("dropdown").style.display = "none";
 }
 
 function closeGuide() {
@@ -23,11 +24,12 @@ function toggleTheme() {
   }
 }
 
-window.onload = () => {
+// load theme
+window.addEventListener("load", () => {
   if (localStorage.getItem("theme") === "dark") {
     document.body.classList.add("dark");
   }
-};
+});
 
 // ===== CANVAS =====
 const canvas = document.getElementById("canvas");
@@ -54,7 +56,7 @@ function getPos(e) {
   };
 }
 
-// pointer events (ALL DEVICES)
+// POINTER EVENTS (ALL DEVICES)
 canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   canvas.setPointerCapture(e.pointerId);
@@ -97,15 +99,15 @@ function stopDrawing() {
 canvas.addEventListener("pointerup", stopDrawing);
 canvas.addEventListener("pointerleave", stopDrawing);
 
-// ===== CLEAR =====
+// ===== CANVAS ACTIONS =====
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// ===== SAVE =====
+// ===== SAVE LETTER =====
 function saveGlyph() {
   const char = document.getElementById("charInput").value;
-  if (!char) return alert("Enter letter");
+  if (!char) return alert("Enter a letter");
 
   glyphs[char] = [...points];
   alert("Saved " + char);
@@ -170,6 +172,7 @@ function generateFont() {
   alert("Font generated!");
 }
 
+// preview
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -186,7 +189,7 @@ function loadPreview(buffer) {
   document.getElementById("preview").style.fontFamily = "CustomFont";
 }
 
-// ===== DOWNLOAD =====
+// download
 function downloadFont() {
   if (!fontBuffer) return alert("Generate first");
 
@@ -198,7 +201,7 @@ function downloadFont() {
   link.click();
 }
 
-// ===== PREVIEW =====
+// preview text
 document.getElementById("textInput").addEventListener("input", e => {
   document.getElementById("preview").textContent = e.target.value;
 });
