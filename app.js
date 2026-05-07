@@ -1,50 +1,4 @@
-// ================= PROJECT =================
-let projects = JSON.parse(localStorage.getItem("kfont_projects")) || {};
-let currentProject = null;
-
-function createProject() {
-  const name = document.getElementById("projectName").value.trim();
-  if (!name) return alert("Enter project name");
-
-  projects[name] = { glyphs: {} };
-  saveLocal();
-  renderProjects();
-}
-
-function renderProjects() {
-  const list = document.getElementById("projectList");
-  list.innerHTML = "";
-
-  Object.keys(projects).forEach(name => {
-    const div = document.createElement("div");
-    div.className = "project-item";
-
-    div.innerHTML = `
-      <span>${name}</span>
-      <button onclick="openProject('${name}')">Open</button>
-    `;
-
-    list.appendChild(div);
-  });
-}
-
-function openProject(name) {
-  currentProject = name;
-  document.getElementById("projectPanel").style.display = "none";
-  document.getElementById("appUI").style.display = "block";
-  document.getElementById("currentProject").innerText = name;
-}
-
-function backToProjects() {
-  document.getElementById("projectPanel").style.display = "block";
-  document.getElementById("appUI").style.display = "none";
-}
-
-function saveLocal() {
-  localStorage.setItem("kfont_projects", JSON.stringify(projects));
-}
-
-// ================= MENU =================
+// ===== MENU =====
 function toggleMenu() {
   const d = document.getElementById("dropdown");
   d.style.display = d.style.display === "block" ? "none" : "block";
@@ -52,65 +6,71 @@ function toggleMenu() {
 
 function openGuide() {
   document.getElementById("guideModal").style.display = "block";
-  document.getElementById("dropdown").style.display = "none";
 }
 
 function closeGuide() {
   document.getElementById("guideModal").style.display = "none";
 }
 
-// ================= CANVAS =================
+// ===== THEME =====
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+
+  if (document.body.classList.contains("dark")) {
+    localStorage.setItem("theme", "dark");
+  } else {
+    localStorage.setItem("theme", "light");
+  }
+}
+
+window.onload = () => {
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+  }
+};
+
+// ===== CANVAS =====
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let drawing = false;
-let points = [];
-let undoStack = [];
-let redoStack = [];
-let fontBuffer = null;
-
-// fix canvas size after load
-window.addEventListener("load", () => {
+function resizeCanvas() {
   canvas.width = canvas.clientWidth;
   canvas.height = 220;
-});
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
-// position helper
+let drawing = false;
+let points = [];
+let glyphs = {};
+let fontBuffer = null;
+
+// position
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
-
-  if (e.touches) {
-    return {
-      x: e.touches[0].clientX - rect.left,
-      y: e.touches[0].clientY - rect.top
-    };
-  }
-
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
   };
 }
 
-// start drawing
-function start(e) {
+// pointer events (ALL DEVICES)
+canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
-  drawing = true;
-  redoStack = [];
+  canvas.setPointerCapture(e.pointerId);
 
-  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  drawing = true;
+  points = [];
 
   const pos = getPos(e);
-  points = [pos];
+  points.push(pos);
 
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
-}
+});
 
-// draw
-function draw(e) {
+canvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
-  e.preventDefault();
 
   const pos = getPos(e);
   points.push(pos);
@@ -124,64 +84,34 @@ function draw(e) {
     const midX = (prev.x + pos.x) / 2;
     const midY = (prev.y + pos.y) / 2;
     ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
-  } else {
-    ctx.lineTo(pos.x, pos.y);
   }
 
   ctx.stroke();
-}
+});
 
-// stop drawing
-function stop() {
+function stopDrawing() {
   drawing = false;
   ctx.beginPath();
 }
 
-// events
-canvas.addEventListener("mousedown", start);
-canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("mouseup", stop);
-canvas.addEventListener("mouseleave", stop);
+canvas.addEventListener("pointerup", stopDrawing);
+canvas.addEventListener("pointerleave", stopDrawing);
 
-canvas.addEventListener("touchstart", start, { passive: false });
-canvas.addEventListener("touchmove", draw, { passive: false });
-canvas.addEventListener("touchend", stop);
-
-// ================= UNDO / REDO =================
-function undo() {
-  if (!undoStack.length) return;
-  redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-  ctx.putImageData(undoStack.pop(), 0, 0);
-}
-
-function redo() {
-  if (!redoStack.length) return;
-  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-  ctx.putImageData(redoStack.pop(), 0, 0);
-}
-
-// ================= CANVAS UTILS =================
+// ===== CLEAR =====
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.beginPath();
 }
 
-// ================= SAVE GLYPH =================
+// ===== SAVE =====
 function saveGlyph() {
-  if (!currentProject) return alert("Create project first");
-
   const char = document.getElementById("charInput").value;
-  if (!char) return alert("Enter a letter");
+  if (!char) return alert("Enter letter");
 
-  if (!points.length) return alert("Draw something first");
-
-  projects[currentProject].glyphs[char] = [...points];
-  saveLocal();
-
+  glyphs[char] = [...points];
   alert("Saved " + char);
 }
 
-// ================= FONT =================
+// ===== FONT =====
 function createPath(points) {
   const path = new opentype.Path();
   if (!points.length) return path;
@@ -204,38 +134,29 @@ function createPath(points) {
   }));
 
   path.moveTo(normalized[0].x, 800 - normalized[0].y);
-
-  normalized.forEach(p => {
-    path.lineTo(p.x, 800 - p.y);
-  });
+  normalized.forEach(p => path.lineTo(p.x, 800 - p.y));
 
   return path;
 }
 
 function generateFont() {
-  if (!currentProject) return alert("No project selected");
-
-  const glyphs = projects[currentProject].glyphs;
-
-  if (!glyphs || Object.keys(glyphs).length === 0) {
+  if (Object.keys(glyphs).length === 0) {
     return alert("No letters saved!");
   }
 
   const glyphArray = [];
 
   Object.keys(glyphs).forEach(char => {
-    const path = createPath(glyphs[char]);
-
     glyphArray.push(new opentype.Glyph({
       name: char,
       unicode: char.charCodeAt(0),
       advanceWidth: 600,
-      path
+      path: createPath(glyphs[char])
     }));
   });
 
   const font = new opentype.Font({
-    familyName: currentProject,
+    familyName: "CustomFont",
     styleName: "Regular",
     unitsPerEm: 1000,
     ascender: 800,
@@ -249,7 +170,6 @@ function generateFont() {
   alert("Font generated!");
 }
 
-// preview
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -257,55 +177,28 @@ function loadPreview(buffer) {
   const style = document.createElement("style");
   style.innerHTML = `
     @font-face {
-      font-family: "${currentProject}";
+      font-family: "CustomFont";
       src: url(${url});
     }
   `;
 
   document.head.appendChild(style);
-  document.getElementById("preview").style.fontFamily = currentProject;
+  document.getElementById("preview").style.fontFamily = "CustomFont";
 }
 
-// download
+// ===== DOWNLOAD =====
 function downloadFont() {
-  if (!fontBuffer) return alert("Generate font first");
+  if (!fontBuffer) return alert("Generate first");
 
   const blob = new Blob([fontBuffer], { type: "font/ttf" });
   const link = document.createElement("a");
 
   link.href = URL.createObjectURL(blob);
-  link.download = currentProject + ".ttf";
+  link.download = "CustomFont.ttf";
   link.click();
 }
 
-// ================= CLOUD =================
-async function saveProjectOnline() {
-  if (!currentProject) return alert("No project");
-
-  await setDoc(doc(db, "projects", currentProject), {
-    glyphs: projects[currentProject].glyphs
-  });
-
-  alert("Saved to cloud ☁️");
-}
-
-async function loadProjectOnline(name) {
-  const ref = doc(db, "projects", name);
-  const snap = await getDoc(ref);
-
-  if (snap.exists()) {
-    projects[name] = snap.data();
-    saveLocal();
-    openProject(name);
-    alert("Loaded from cloud 🚀");
-  } else {
-    alert("No cloud data");
-  }
-}
-
-// ================= INIT =================
-renderProjects();
-
+// ===== PREVIEW =====
 document.getElementById("textInput").addEventListener("input", e => {
   document.getElementById("preview").textContent = e.target.value;
 });
