@@ -7,11 +7,12 @@
 </head>
 <body>
 
-<!-- 3 DOT MENU -->
+<!-- MENU -->
 <div class="menu">
   <button onclick="toggleMenu()">⋮</button>
   <div id="dropdown" class="dropdown">
     <p onclick="openGuide()">Guide</p>
+    <p onclick="toggleTheme()">Toggle Theme</p>
   </div>
 </div>
 
@@ -19,61 +20,39 @@
 
   <h1>KIBA FONT STUDIO</h1>
 
-  <!-- PROJECT -->
-  <div id="projectPanel">
-    <input id="projectName" placeholder="Project name">
-    <button onclick="createProject()">Create</button>
-    <div id="projectList"></div>
+  <input id="textInput" placeholder="Type preview..." />
+  <p id="preview">Preview</p>
+
+  <input id="charInput" maxlength="1" placeholder="Letter">
+  <input type="range" id="brushSize" min="1" max="12" value="4">
+
+  <div>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="saveGlyph()">Save</button>
   </div>
 
-  <!-- APP -->
-  <div id="appUI" style="display:none;">
+  <canvas id="canvas"></canvas>
 
-    <h3 id="currentProject"></h3>
-
-    <input id="textInput" placeholder="Type preview..." />
-    <p id="preview">Preview</p>
-
-    <input id="charInput" maxlength="1" placeholder="Letter">
-    <input type="range" id="brushSize" min="1" max="12" value="4">
-
-    <div>
-      <button onclick="undo()">Undo</button>
-      <button onclick="redo()">Redo</button>
-      <button onclick="clearCanvas()">Clear</button>
-      <button onclick="saveGlyph()">Save</button>
-    </div>
-
-    <canvas id="canvas"></canvas>
-
-    <div>
-      <button onclick="generateFont()">Generate</button>
-      <button onclick="downloadFont()">Download</button>
-      <button onclick="saveProjectOnline()">Cloud Save</button>
-      <button onclick="loadProjectOnline(currentProject)">Cloud Load</button>
-      <button onclick="backToProjects()">Back</button>
-    </div>
-
+  <div>
+    <button onclick="generateFont()">Generate</button>
+    <button onclick="downloadFont()">Download</button>
   </div>
 
 </div>
 
-<!-- GUIDE MODAL -->
+<!-- GUIDE -->
 <div id="guideModal" class="modal">
   <div class="modal-content">
     <h2>Guide</h2>
-    <p>1. Create project</p>
-    <p>2. Enter letter</p>
-    <p>3. Draw on canvas</p>
-    <p>4. Click Save</p>
-    <p>5. Generate font</p>
-    <p>6. Download</p>
+    <p>1. Enter letter</p>
+    <p>2. Draw it</p>
+    <p>3. Save</p>
+    <p>4. Generate font</p>
+    <p>5. Download</p>
     <button onclick="closeGuide()">Close</button>
   </div>
 </div>
 
-<script type="module" src="firebase.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
