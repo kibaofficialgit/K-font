@@ -1,8 +1,8 @@
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #0a0a0a;
-  color: white;
+  font-family: 'Courier New', monospace;
+  background: #f4f1ea;
+  color: #222;
   display: flex;
   justify-content: center;
 }
@@ -13,68 +13,80 @@ body {
   text-align: center;
 }
 
+/* ✏️ Sketch title */
 .logo {
   margin-top: 20px;
   font-size: 24px;
   letter-spacing: 2px;
-  color: #00f7ff;
-  text-shadow: 0 0 10px #00f7ff;
+  color: #333;
+  text-shadow: 1px 1px 0 #bbb;
 }
 
+/* ✏️ Input fields */
 input {
   width: 90%;
   padding: 12px;
   margin: 10px 0;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-  background: #111;
-  color: white;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  background: #fff;
+  color: #222;
+  font-family: 'Courier New', monospace;
 }
 
+/* ✏️ Preview box (paper style) */
 .preview-box {
-  background: #111;
+  background: #fff;
   padding: 15px;
-  border-radius: 15px;
+  border-radius: 10px;
   margin: 10px 0;
-  box-shadow: 0 0 15px rgba(0,255,255,0.2);
+  border: 2px dashed #aaa;
+  box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
 }
 
 #preview {
   font-size: 28px;
 }
 
+/* ✏️ Canvas like sketch board */
 canvas {
   width: 100%;
   height: 250px;
-  background: black;
-  border-radius: 15px;
+  background: #fff;
+  border: 2px solid #999;
+  border-radius: 10px;
   margin-top: 10px;
   touch-action: none;
-  box-shadow: 0 0 15px rgba(0,255,255,0.3);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
 }
 
+/* ✏️ Pencil-style buttons */
 button {
   padding: 10px 15px;
   margin: 5px;
-  border: none;
-  border-radius: 10px;
-  background: #00f7ff;
-  color: black;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: #eaeaea;
+  color: #222;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.2s;
+  font-family: 'Courier New', monospace;
+  box-shadow: 2px 2px 0 #999;
+  transition: 0.1s;
 }
 
-button:hover {
-  transform: scale(1.05);
+button:active {
+  box-shadow: 1px 1px 0 #999;
+  transform: translate(1px, 1px);
 }
 
+/* ✏️ Footer */
 footer {
   margin-top: 20px;
-  opacity: 0.6;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 footer strong {
-  color: #00f7ff;
+  color: #000;
 }
