@@ -11,22 +11,25 @@ let fontBuffer = null;
 
 const brushSize = document.getElementById("brushSize");
 
-// Get position
+// 🎯 Get correct position (mobile + desktop)
 function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+
   if (e.touches) {
     return {
-      x: e.touches[0].clientX - canvas.getBoundingClientRect().left,
-      y: e.touches[0].clientY - canvas.getBoundingClientRect().top
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  } else {
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
     };
   }
-  return { x: e.offsetX, y: e.offsetY };
 }
 
-// Start
-canvas.addEventListener("mousedown", start);
-canvas.addEventListener("touchstart", start, { passive: false });
-
-function start(e) {
+// 🟢 Start drawing
+function startDrawing(e) {
   e.preventDefault();
   drawing = true;
   points = [];
@@ -34,21 +37,10 @@ function start(e) {
   const pos = getPos(e);
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
+  points.push(pos);
 }
 
-// Stop
-canvas.addEventListener("mouseup", stop);
-canvas.addEventListener("mouseleave", stop);
-canvas.addEventListener("touchend", stop);
-
-function stop() {
-  drawing = false;
-}
-
-// Draw (with smoothing)
-canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("touchmove", draw, { passive: false });
-
+// ✏️ Draw with smoothing
 function draw(e) {
   if (!drawing) return;
   e.preventDefault();
@@ -58,11 +50,15 @@ function draw(e) {
 
   ctx.lineWidth = brushSize.value;
   ctx.lineCap = "round";
+  ctx.strokeStyle = "#222";
 
-  // ✨ simple smoothing
-  const last = points[points.length - 2];
-  if (last) {
-    ctx.quadraticCurveTo(last.x, last.y, pos.x, pos.y);
+  const prev = points[points.length - 2];
+
+  if (prev) {
+    const midX = (prev.x + pos.x) / 2;
+    const midY = (prev.y + pos.y) / 2;
+
+    ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
   } else {
     ctx.lineTo(pos.x, pos.y);
   }
@@ -70,25 +66,35 @@ function draw(e) {
   ctx.stroke();
 }
 
-// Clear
+// 🔴 Stop drawing
+function stopDrawing() {
+  drawing = false;
+}
+
+// 🧹 Clear canvas
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.beginPath();
 }
 
-// Save
+// 💾 Save glyph
 function saveGlyph() {
   const char = document.getElementById("charInput").value;
-  if (!char) return alert("Enter a letter");
+
+  if (!char) {
+    alert("Enter a letter!");
+    return;
+  }
 
   glyphs[char] = [...points];
   clearCanvas();
-  alert(`Saved ${char}`);
+  alert(`Saved "${char}"`);
 }
 
-// Convert path
+// 🔤 Convert to path
 function createPath(points) {
   const path = new opentype.Path();
+
   if (!points.length) return path;
 
   path.moveTo(points[0].x, 200 - points[0].y);
@@ -100,7 +106,7 @@ function createPath(points) {
   return path;
 }
 
-// Generate font
+// ⚡ Generate font
 function generateFont() {
   const glyphArray = [];
 
@@ -111,7 +117,7 @@ function generateFont() {
       name: char,
       unicode: char.charCodeAt(0),
       advanceWidth: 600,
-      path
+      path: path
     });
 
     glyphArray.push(glyph);
@@ -129,10 +135,10 @@ function generateFont() {
   fontBuffer = font.toArrayBuffer();
   loadPreview(fontBuffer);
 
-  alert("Font Ready!");
+  alert("Font generated!");
 }
 
-// Preview
+// 👀 Load preview
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -144,14 +150,17 @@ function loadPreview(buffer) {
       src: url(${url});
     }
   `;
-  document.head.appendChild(style);
 
+  document.head.appendChild(style);
   document.getElementById("preview").style.fontFamily = "KibaFont";
 }
 
-// Download
+// 📥 Download
 function downloadFont() {
-  if (!fontBuffer) return alert("Generate first");
+  if (!fontBuffer) {
+    alert("Generate font first!");
+    return;
+  }
 
   const blob = new Blob([fontBuffer], { type: "font/ttf" });
   const link = document.createElement("a");
@@ -161,7 +170,18 @@ function downloadFont() {
   link.click();
 }
 
-// Live preview
+// 🔤 Live preview
 document.getElementById("textInput").addEventListener("input", e => {
   document.getElementById("preview").textContent = e.target.value;
 });
+
+// 🖱️ Desktop events
+canvas.addEventListener("mousedown", startDrawing);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stopDrawing);
+canvas.addEventListener("mouseleave", stopDrawing);
+
+// 📱 Mobile events
+canvas.addEventListener("touchstart", startDrawing, { passive: false });
+canvas.addEventListener("touchmove", draw, { passive: false });
+canvas.addEventListener("touchend", stopDrawing);
