@@ -1,17 +1,64 @@
+let projects = JSON.parse(localStorage.getItem("kfont_projects")) || {};
+let currentProject = null;
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 canvas.width = canvas.offsetWidth;
-canvas.height = 250;
+canvas.height = 220;
 
 let drawing = false;
 let points = [];
-let glyphs = {};
+let undoStack = [];
+let redoStack = [];
 let fontBuffer = null;
 
-const brushSize = document.getElementById("brushSize");
+// ---------- PROJECT ----------
 
-// 🎯 Get correct position (mobile + desktop)
+function createProject() {
+  const name = document.getElementById("projectName").value;
+  if (!name) return alert("Enter name");
+
+  projects[name] = { glyphs: {} };
+  saveLocal();
+  renderProjects();
+}
+
+function renderProjects() {
+  const list = document.getElementById("projectList");
+  list.innerHTML = "";
+
+  Object.keys(projects).forEach(name => {
+    const div = document.createElement("div");
+    div.className = "project-item";
+
+    div.innerHTML = `
+      <span>${name}</span>
+      <button onclick="openProject('${name}')">Open</button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+function openProject(name) {
+  currentProject = name;
+  document.getElementById("projectPanel").style.display = "none";
+  document.getElementById("appUI").style.display = "block";
+  document.getElementById("currentProject").innerText = name;
+}
+
+function backToProjects() {
+  document.getElementById("projectPanel").style.display = "block";
+  document.getElementById("appUI").style.display = "none";
+}
+
+function saveLocal() {
+  localStorage.setItem("kfont_projects", JSON.stringify(projects));
+}
+
+// ---------- DRAW ----------
+
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
 
@@ -20,27 +67,26 @@ function getPos(e) {
       x: e.touches[0].clientX - rect.left,
       y: e.touches[0].clientY - rect.top
     };
-  } else {
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
   }
+
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
 }
 
-// 🟢 Start drawing
-function startDrawing(e) {
+function start(e) {
   e.preventDefault();
   drawing = true;
   points = [];
 
+  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+
   const pos = getPos(e);
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
-  points.push(pos);
 }
 
-// ✏️ Draw with smoothing
 function draw(e) {
   if (!drawing) return;
   e.preventDefault();
@@ -48,83 +94,108 @@ function draw(e) {
   const pos = getPos(e);
   points.push(pos);
 
-  ctx.lineWidth = brushSize.value;
+  ctx.lineWidth = 4;
   ctx.lineCap = "round";
-  ctx.strokeStyle = "#222";
 
   const prev = points[points.length - 2];
-
   if (prev) {
     const midX = (prev.x + pos.x) / 2;
     const midY = (prev.y + pos.y) / 2;
-
     ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
-  } else {
-    ctx.lineTo(pos.x, pos.y);
   }
 
   ctx.stroke();
 }
 
-// 🔴 Stop drawing
-function stopDrawing() {
+function stop() {
   drawing = false;
 }
 
-// 🧹 Clear canvas
+canvas.addEventListener("mousedown", start);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stop);
+canvas.addEventListener("mouseleave", stop);
+
+canvas.addEventListener("touchstart", start, { passive: false });
+canvas.addEventListener("touchmove", draw, { passive: false });
+canvas.addEventListener("touchend", stop);
+
+// ---------- UNDO ----------
+
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  ctx.putImageData(undoStack.pop(), 0, 0);
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  ctx.putImageData(redoStack.pop(), 0, 0);
+}
+
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.beginPath();
 }
 
-// 💾 Save glyph
+// ---------- SAVE GLYPH ----------
+
 function saveGlyph() {
   const char = document.getElementById("charInput").value;
+  if (!char) return alert("Enter letter");
 
-  if (!char) {
-    alert("Enter a letter!");
-    return;
-  }
-
-  glyphs[char] = [...points];
-  clearCanvas();
-  alert(`Saved "${char}"`);
+  projects[currentProject].glyphs[char] = [...points];
+  alert("Saved " + char);
 }
 
-// 🔤 Convert to path
+// ---------- FONT ----------
+
 function createPath(points) {
   const path = new opentype.Path();
-
   if (!points.length) return path;
 
-  path.moveTo(points[0].x, 200 - points[0].y);
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
 
   points.forEach(p => {
-    path.lineTo(p.x, 200 - p.y);
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  });
+
+  const scale = 800 / Math.max(maxX - minX, maxY - minY);
+
+  const normalized = points.map(p => ({
+    x: (p.x - minX) * scale,
+    y: (p.y - minY) * scale
+  }));
+
+  path.moveTo(normalized[0].x, 800 - normalized[0].y);
+
+  normalized.forEach(p => {
+    path.lineTo(p.x, 800 - p.y);
   });
 
   return path;
 }
 
-// ⚡ Generate font
 function generateFont() {
   const glyphArray = [];
 
-  Object.keys(glyphs).forEach(char => {
-    const path = createPath(glyphs[char]);
+  Object.keys(projects[currentProject].glyphs).forEach(char => {
+    const path = createPath(projects[currentProject].glyphs[char]);
 
-    const glyph = new opentype.Glyph({
+    glyphArray.push(new opentype.Glyph({
       name: char,
       unicode: char.charCodeAt(0),
       advanceWidth: 600,
-      path: path
-    });
-
-    glyphArray.push(glyph);
+      path
+    }));
   });
 
   const font = new opentype.Font({
-    familyName: "KibaFont",
+    familyName: currentProject,
     styleName: "Regular",
     unitsPerEm: 1000,
     ascender: 800,
@@ -134,11 +205,8 @@ function generateFont() {
 
   fontBuffer = font.toArrayBuffer();
   loadPreview(fontBuffer);
-
-  alert("Font generated!");
 }
 
-// 👀 Load preview
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -146,42 +214,54 @@ function loadPreview(buffer) {
   const style = document.createElement("style");
   style.innerHTML = `
     @font-face {
-      font-family: "KibaFont";
+      font-family: "${currentProject}";
       src: url(${url});
     }
   `;
 
   document.head.appendChild(style);
-  document.getElementById("preview").style.fontFamily = "KibaFont";
+  document.getElementById("preview").style.fontFamily = currentProject;
 }
 
-// 📥 Download
+// ---------- DOWNLOAD ----------
+
 function downloadFont() {
-  if (!fontBuffer) {
-    alert("Generate font first!");
-    return;
-  }
+  if (!fontBuffer) return alert("Generate first");
 
   const blob = new Blob([fontBuffer], { type: "font/ttf" });
   const link = document.createElement("a");
 
   link.href = URL.createObjectURL(blob);
-  link.download = "KibaFont.ttf";
+  link.download = currentProject + ".ttf";
   link.click();
 }
 
-// 🔤 Live preview
+// ---------- CLOUD ----------
+
+async function saveProjectOnline() {
+  await setDoc(doc(db, "projects", currentProject), {
+    glyphs: projects[currentProject].glyphs
+  });
+
+  alert("Saved to cloud ☁️");
+}
+
+async function loadProjectOnline(name) {
+  const ref = doc(db, "projects", name);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    projects[name] = snap.data();
+    openProject(name);
+    alert("Loaded from cloud 🚀");
+  } else {
+    alert("No cloud data");
+  }
+}
+
+// ---------- INIT ----------
+renderProjects();
+
 document.getElementById("textInput").addEventListener("input", e => {
   document.getElementById("preview").textContent = e.target.value;
 });
-
-// 🖱️ Desktop events
-canvas.addEventListener("mousedown", startDrawing);
-canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("mouseup", stopDrawing);
-canvas.addEventListener("mouseleave", stopDrawing);
-
-// 📱 Mobile events
-canvas.addEventListener("touchstart", startDrawing, { passive: false });
-canvas.addEventListener("touchmove", draw, { passive: false });
-canvas.addEventListener("touchend", stopDrawing);
