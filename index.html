@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Font Maker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/opentype.js@latest/dist/opentype.min.js"></script>
+</head>
+<body>
+
+<h1>🎨 Custom Font Maker</h1>
+
+<input id="textInput" placeholder="Type preview text..." />
+<p id="preview">Preview Text</p>
+
+<div class="controls">
+  <input id="charInput" maxlength="1" placeholder="Enter letter (A-Z)" />
+  <button onclick="clearCanvas()">Clear</button>
+  <button onclick="saveGlyph()">Save Letter</button>
+</div>
+
+<canvas id="canvas" width="400" height="200"></canvas>
+
+<button onclick="generateFont()">Generate Font</button>
+<button onclick="downloadFont()">Download Font</button>
+
+<script src="app.js"></script>
+</body>
+</html>
