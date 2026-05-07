@@ -9,33 +9,53 @@
 
 <div class="container">
 
-  <h1 class="logo">KIBA FONT STUDIO</h1>
+  <h1>KIBA FONT STUDIO</h1>
 
-  <input id="textInput" placeholder="Type your text..." />
-  <div class="preview-box">
-    <p id="preview">Your Custom Text</p>
+  <!-- PROJECT PANEL -->
+  <div id="projectPanel">
+    <input id="projectName" placeholder="New project name">
+    <button onclick="createProject()">Create</button>
+    <div id="projectList"></div>
   </div>
 
-  <div class="controls">
-    <input id="charInput" maxlength="1" placeholder="Letter" />
-    <input type="range" id="brushSize" min="1" max="12" value="4" />
-    <button onclick="clearCanvas()">Clear</button>
-    <button onclick="saveGlyph()">Save</button>
+  <!-- APP UI -->
+  <div id="appUI" style="display:none;">
+
+    <h3 id="currentProject"></h3>
+
+    <input id="textInput" placeholder="Preview text">
+    <p id="preview">Preview</p>
+
+    <input id="charInput" maxlength="1" placeholder="Letter">
+    <input type="range" id="brushSize" min="1" max="12" value="4">
+
+    <div>
+      <button onclick="undo()">Undo</button>
+      <button onclick="redo()">Redo</button>
+      <button onclick="clearCanvas()">Clear</button>
+      <button onclick="saveGlyph()">Save</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div>
+      <button onclick="generateFont()">Generate</button>
+      <button onclick="downloadFont()">Download</button>
+      <button onclick="saveProject()">Save Local</button>
+      <button onclick="saveProjectOnline()">Cloud Save</button>
+      <button onclick="loadProjectOnline(currentProject)">Cloud Load</button>
+      <button onclick="backToProjects()">Back</button>
+    </div>
+
   </div>
-
-  <canvas id="canvas"></canvas>
-
-  <div class="bottom-controls">
-    <button onclick="generateFont()">Generate Font</button>
-    <button onclick="downloadFont()">Download</button>
-  </div>
-
-  <footer>
-    <p>© 2026 <strong>Kiba Official</strong></p>
-  </footer>
 
 </div>
 
+<!-- Firebase -->
+<script type="module" src="firebase.js"></script>
+
+<!-- App -->
 <script src="app.js"></script>
+
 </body>
 </html>
