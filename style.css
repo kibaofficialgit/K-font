@@ -1,92 +1,70 @@
-body {
-  margin: 0;
-  font-family: 'Courier New', monospace;
-  background: #f4f1ea;
-  color: #222;
-  display: flex;
-  justify-content: center;
+  const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = canvas.offsetWidth;
+canvas.height = 250;
+
+let drawing = false;
+let points = [];
+
+const brushSize = document.getElementById("brushSize");
+
+// Get position (mobile + desktop)
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+
+  if (e.touches) {
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  } else {
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
 }
 
-.container {
-  width: 90%;
-  max-width: 500px;
-  text-align: center;
+// START drawing
+function startDrawing(e) {
+  e.preventDefault();
+  drawing = true;
+  points = [];
+
+  const pos = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
 }
 
-/* ✏️ Sketch title */
-.logo {
-  margin-top: 20px;
-  font-size: 24px;
-  letter-spacing: 2px;
-  color: #333;
-  text-shadow: 1px 1px 0 #bbb;
+// DRAW
+function draw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+
+  const pos = getPos(e);
+  points.push(pos);
+
+  ctx.lineWidth = brushSize.value;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#222";
+
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
 }
 
-/* ✏️ Input fields */
-input {
-  width: 90%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 2px solid #ccc;
-  background: #fff;
-  color: #222;
-  font-family: 'Courier New', monospace;
+// STOP drawing
+function stopDrawing() {
+  drawing = false;
 }
 
-/* ✏️ Preview box (paper style) */
-.preview-box {
-  background: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  margin: 10px 0;
-  border: 2px dashed #aaa;
-  box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
-}
+// EVENTS (VERY IMPORTANT)
+canvas.addEventListener("mousedown", startDrawing);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stopDrawing);
+canvas.addEventListener("mouseleave", stopDrawing);
 
-#preview {
-  font-size: 28px;
-}
-
-/* ✏️ Canvas like sketch board */
-canvas {
-  width: 100%;
-  height: 250px;
-  background: #fff;
-  border: 2px solid #999;
-  border-radius: 10px;
-  margin-top: 10px;
-  touch-action: none;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-}
-
-/* ✏️ Pencil-style buttons */
-button {
-  padding: 10px 15px;
-  margin: 5px;
-  border: 2px solid #333;
-  border-radius: 8px;
-  background: #eaeaea;
-  color: #222;
-  font-weight: bold;
-  cursor: pointer;
-  font-family: 'Courier New', monospace;
-  box-shadow: 2px 2px 0 #999;
-  transition: 0.1s;
-}
-
-button:active {
-  box-shadow: 1px 1px 0 #999;
-  transform: translate(1px, 1px);
-}
-
-/* ✏️ Footer */
-footer {
-  margin-top: 20px;
-  font-size: 14px;
-  opacity: 0.7;
-}
-
-footer strong {
-  color: #000;
-}
+// MOBILE
+canvas.addEventListener("touchstart", startDrawing, { passive: false });
+canvas.addEventListener("touchmove", draw, { passive: false });
+canvas.addEventListener("touchend", stopDrawing);
