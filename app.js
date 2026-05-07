@@ -1,23 +1,10 @@
+// ================= PROJECT =================
 let projects = JSON.parse(localStorage.getItem("kfont_projects")) || {};
 let currentProject = null;
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-canvas.width = canvas.offsetWidth;
-canvas.height = 220;
-
-let drawing = false;
-let points = [];
-let undoStack = [];
-let redoStack = [];
-let fontBuffer = null;
-
-// ---------- PROJECT ----------
-
 function createProject() {
-  const name = document.getElementById("projectName").value;
-  if (!name) return alert("Enter name");
+  const name = document.getElementById("projectName").value.trim();
+  if (!name) return alert("Enter project name");
 
   projects[name] = { glyphs: {} };
   saveLocal();
@@ -57,8 +44,38 @@ function saveLocal() {
   localStorage.setItem("kfont_projects", JSON.stringify(projects));
 }
 
-// ---------- DRAW ----------
+// ================= MENU =================
+function toggleMenu() {
+  const d = document.getElementById("dropdown");
+  d.style.display = d.style.display === "block" ? "none" : "block";
+}
 
+function openGuide() {
+  document.getElementById("guideModal").style.display = "block";
+  document.getElementById("dropdown").style.display = "none";
+}
+
+function closeGuide() {
+  document.getElementById("guideModal").style.display = "none";
+}
+
+// ================= CANVAS =================
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+let points = [];
+let undoStack = [];
+let redoStack = [];
+let fontBuffer = null;
+
+// fix canvas size after load
+window.addEventListener("load", () => {
+  canvas.width = canvas.clientWidth;
+  canvas.height = 220;
+});
+
+// position helper
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
 
@@ -75,18 +92,22 @@ function getPos(e) {
   };
 }
 
+// start drawing
 function start(e) {
   e.preventDefault();
   drawing = true;
-  points = [];
+  redoStack = [];
 
   undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
 
   const pos = getPos(e);
+  points = [pos];
+
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
 }
 
+// draw
 function draw(e) {
   if (!drawing) return;
   e.preventDefault();
@@ -94,23 +115,29 @@ function draw(e) {
   const pos = getPos(e);
   points.push(pos);
 
-  ctx.lineWidth = 4;
+  ctx.lineWidth = document.getElementById("brushSize").value;
   ctx.lineCap = "round";
+  ctx.strokeStyle = "#000";
 
   const prev = points[points.length - 2];
   if (prev) {
     const midX = (prev.x + pos.x) / 2;
     const midY = (prev.y + pos.y) / 2;
     ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
+  } else {
+    ctx.lineTo(pos.x, pos.y);
   }
 
   ctx.stroke();
 }
 
+// stop drawing
 function stop() {
   drawing = false;
+  ctx.beginPath();
 }
 
+// events
 canvas.addEventListener("mousedown", start);
 canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseup", stop);
@@ -120,8 +147,7 @@ canvas.addEventListener("touchstart", start, { passive: false });
 canvas.addEventListener("touchmove", draw, { passive: false });
 canvas.addEventListener("touchend", stop);
 
-// ---------- UNDO ----------
-
+// ================= UNDO / REDO =================
 function undo() {
   if (!undoStack.length) return;
   redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
@@ -134,22 +160,28 @@ function redo() {
   ctx.putImageData(redoStack.pop(), 0, 0);
 }
 
+// ================= CANVAS UTILS =================
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
 }
 
-// ---------- SAVE GLYPH ----------
-
+// ================= SAVE GLYPH =================
 function saveGlyph() {
+  if (!currentProject) return alert("Create project first");
+
   const char = document.getElementById("charInput").value;
-  if (!char) return alert("Enter letter");
+  if (!char) return alert("Enter a letter");
+
+  if (!points.length) return alert("Draw something first");
 
   projects[currentProject].glyphs[char] = [...points];
+  saveLocal();
+
   alert("Saved " + char);
 }
 
-// ---------- FONT ----------
-
+// ================= FONT =================
 function createPath(points) {
   const path = new opentype.Path();
   if (!points.length) return path;
@@ -181,10 +213,18 @@ function createPath(points) {
 }
 
 function generateFont() {
+  if (!currentProject) return alert("No project selected");
+
+  const glyphs = projects[currentProject].glyphs;
+
+  if (!glyphs || Object.keys(glyphs).length === 0) {
+    return alert("No letters saved!");
+  }
+
   const glyphArray = [];
 
-  Object.keys(projects[currentProject].glyphs).forEach(char => {
-    const path = createPath(projects[currentProject].glyphs[char]);
+  Object.keys(glyphs).forEach(char => {
+    const path = createPath(glyphs[char]);
 
     glyphArray.push(new opentype.Glyph({
       name: char,
@@ -205,8 +245,11 @@ function generateFont() {
 
   fontBuffer = font.toArrayBuffer();
   loadPreview(fontBuffer);
+
+  alert("Font generated!");
 }
 
+// preview
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -223,10 +266,9 @@ function loadPreview(buffer) {
   document.getElementById("preview").style.fontFamily = currentProject;
 }
 
-// ---------- DOWNLOAD ----------
-
+// download
 function downloadFont() {
-  if (!fontBuffer) return alert("Generate first");
+  if (!fontBuffer) return alert("Generate font first");
 
   const blob = new Blob([fontBuffer], { type: "font/ttf" });
   const link = document.createElement("a");
@@ -236,9 +278,10 @@ function downloadFont() {
   link.click();
 }
 
-// ---------- CLOUD ----------
-
+// ================= CLOUD =================
 async function saveProjectOnline() {
+  if (!currentProject) return alert("No project");
+
   await setDoc(doc(db, "projects", currentProject), {
     glyphs: projects[currentProject].glyphs
   });
@@ -252,6 +295,7 @@ async function loadProjectOnline(name) {
 
   if (snap.exists()) {
     projects[name] = snap.data();
+    saveLocal();
     openProject(name);
     alert("Loaded from cloud 🚀");
   } else {
@@ -259,7 +303,7 @@ async function loadProjectOnline(name) {
   }
 }
 
-// ---------- INIT ----------
+// ================= INIT =================
 renderProjects();
 
 document.getElementById("textInput").addEventListener("input", e => {
