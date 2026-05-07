@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  background: #0a0a0a;
   color: white;
   display: flex;
   justify-content: center;
@@ -13,22 +13,35 @@ body {
   text-align: center;
 }
 
-h1 {
+.logo {
   margin-top: 20px;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: #00f7ff;
+  text-shadow: 0 0 10px #00f7ff;
 }
 
 input {
   width: 90%;
-  padding: 10px;
+  padding: 12px;
   margin: 10px 0;
   border-radius: 10px;
   border: none;
   outline: none;
+  background: #111;
+  color: white;
+}
+
+.preview-box {
+  background: #111;
+  padding: 15px;
+  border-radius: 15px;
+  margin: 10px 0;
+  box-shadow: 0 0 15px rgba(0,255,255,0.2);
 }
 
 #preview {
-  font-size: 30px;
-  margin: 15px 0;
+  font-size: 28px;
 }
 
 canvas {
@@ -38,6 +51,7 @@ canvas {
   border-radius: 15px;
   margin-top: 10px;
   touch-action: none;
+  box-shadow: 0 0 15px rgba(0,255,255,0.3);
 }
 
 button {
@@ -45,24 +59,22 @@ button {
   margin: 5px;
   border: none;
   border-radius: 10px;
-  background: #00c6ff;
+  background: #00f7ff;
   color: black;
   font-weight: bold;
   cursor: pointer;
+  transition: 0.2s;
 }
 
-.top-controls,
-.bottom-controls {
-  margin: 10px 0;
+button:hover {
+  transform: scale(1.05);
 }
 
 footer {
   margin-top: 20px;
-  padding: 15px;
-  font-size: 14px;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 footer strong {
-  color: #00c6ff;
+  color: #00f7ff;
 }
