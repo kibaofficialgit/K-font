@@ -11,7 +11,7 @@ let fontBuffer = null;
 
 const brushSize = document.getElementById("brushSize");
 
-// Position for mouse + touch
+// Get position
 function getPos(e) {
   if (e.touches) {
     return {
@@ -22,26 +22,36 @@ function getPos(e) {
   return { x: e.offsetX, y: e.offsetY };
 }
 
-// Start drawing
+// Start
 canvas.addEventListener("mousedown", start);
-canvas.addEventListener("touchstart", start);
+canvas.addEventListener("touchstart", start, { passive: false });
 
 function start(e) {
+  e.preventDefault();
   drawing = true;
   points = [];
+
+  const pos = getPos(e);
   ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
 }
 
-// Stop drawing
-canvas.addEventListener("mouseup", () => drawing = false);
-canvas.addEventListener("touchend", () => drawing = false);
+// Stop
+canvas.addEventListener("mouseup", stop);
+canvas.addEventListener("mouseleave", stop);
+canvas.addEventListener("touchend", stop);
 
-// Draw
+function stop() {
+  drawing = false;
+}
+
+// Draw (with smoothing)
 canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("touchmove", draw);
+canvas.addEventListener("touchmove", draw, { passive: false });
 
 function draw(e) {
   if (!drawing) return;
+  e.preventDefault();
 
   const pos = getPos(e);
   points.push(pos);
@@ -49,17 +59,24 @@ function draw(e) {
   ctx.lineWidth = brushSize.value;
   ctx.lineCap = "round";
 
-  ctx.lineTo(pos.x, pos.y);
+  // ✨ simple smoothing
+  const last = points[points.length - 2];
+  if (last) {
+    ctx.quadraticCurveTo(last.x, last.y, pos.x, pos.y);
+  } else {
+    ctx.lineTo(pos.x, pos.y);
+  }
+
   ctx.stroke();
 }
 
-// Clear canvas
+// Clear
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.beginPath();
 }
 
-// Save letter
+// Save
 function saveGlyph() {
   const char = document.getElementById("charInput").value;
   if (!char) return alert("Enter a letter");
@@ -69,7 +86,7 @@ function saveGlyph() {
   alert(`Saved ${char}`);
 }
 
-// Convert drawing to path
+// Convert path
 function createPath(points) {
   const path = new opentype.Path();
   if (!points.length) return path;
@@ -101,7 +118,7 @@ function generateFont() {
   });
 
   const font = new opentype.Font({
-    familyName: "KFont",
+    familyName: "KibaFont",
     styleName: "Regular",
     unitsPerEm: 1000,
     ascender: 800,
@@ -115,7 +132,7 @@ function generateFont() {
   alert("Font Ready!");
 }
 
-// Load preview font
+// Preview
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -123,28 +140,28 @@ function loadPreview(buffer) {
   const style = document.createElement("style");
   style.innerHTML = `
     @font-face {
-      font-family: "KFont";
+      font-family: "KibaFont";
       src: url(${url});
     }
   `;
   document.head.appendChild(style);
 
-  document.getElementById("preview").style.fontFamily = "KFont";
+  document.getElementById("preview").style.fontFamily = "KibaFont";
 }
 
-// Download font
+// Download
 function downloadFont() {
-  if (!fontBuffer) return alert("Generate font first");
+  if (!fontBuffer) return alert("Generate first");
 
   const blob = new Blob([fontBuffer], { type: "font/ttf" });
   const link = document.createElement("a");
 
   link.href = URL.createObjectURL(blob);
-  link.download = "KFont.ttf";
+  link.download = "KibaFont.ttf";
   link.click();
 }
 
-// Live preview typing
+// Live preview
 document.getElementById("textInput").addEventListener("input", e => {
   document.getElementById("preview").textContent = e.target.value;
 });
