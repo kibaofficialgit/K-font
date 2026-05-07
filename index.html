@@ -7,23 +7,31 @@
 </head>
 <body>
 
+<!-- 3 DOT MENU -->
+<div class="menu">
+  <button onclick="toggleMenu()">⋮</button>
+  <div id="dropdown" class="dropdown">
+    <p onclick="openGuide()">Guide</p>
+  </div>
+</div>
+
 <div class="container">
 
   <h1>KIBA FONT STUDIO</h1>
 
-  <!-- PROJECT PANEL -->
+  <!-- PROJECT -->
   <div id="projectPanel">
-    <input id="projectName" placeholder="New project name">
+    <input id="projectName" placeholder="Project name">
     <button onclick="createProject()">Create</button>
     <div id="projectList"></div>
   </div>
 
-  <!-- APP UI -->
+  <!-- APP -->
   <div id="appUI" style="display:none;">
 
     <h3 id="currentProject"></h3>
 
-    <input id="textInput" placeholder="Preview text">
+    <input id="textInput" placeholder="Type preview..." />
     <p id="preview">Preview</p>
 
     <input id="charInput" maxlength="1" placeholder="Letter">
@@ -41,7 +49,6 @@
     <div>
       <button onclick="generateFont()">Generate</button>
       <button onclick="downloadFont()">Download</button>
-      <button onclick="saveProject()">Save Local</button>
       <button onclick="saveProjectOnline()">Cloud Save</button>
       <button onclick="loadProjectOnline(currentProject)">Cloud Load</button>
       <button onclick="backToProjects()">Back</button>
@@ -51,10 +58,21 @@
 
 </div>
 
-<!-- Firebase -->
-<script type="module" src="firebase.js"></script>
+<!-- GUIDE MODAL -->
+<div id="guideModal" class="modal">
+  <div class="modal-content">
+    <h2>Guide</h2>
+    <p>1. Create project</p>
+    <p>2. Enter letter</p>
+    <p>3. Draw on canvas</p>
+    <p>4. Click Save</p>
+    <p>5. Generate font</p>
+    <p>6. Download</p>
+    <button onclick="closeGuide()">Close</button>
+  </div>
+</div>
 
-<!-- App -->
+<script type="module" src="firebase.js"></script>
 <script src="app.js"></script>
 
 </body>
