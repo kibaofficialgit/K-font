@@ -1,32 +1,57 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+canvas.width = canvas.offsetWidth;
+canvas.height = 250;
+
 let drawing = false;
 let points = [];
 let glyphs = {};
 let fontBuffer = null;
 
-canvas.onmousedown = () => {
+const brushSize = document.getElementById("brushSize");
+
+// Position for mouse + touch
+function getPos(e) {
+  if (e.touches) {
+    return {
+      x: e.touches[0].clientX - canvas.getBoundingClientRect().left,
+      y: e.touches[0].clientY - canvas.getBoundingClientRect().top
+    };
+  }
+  return { x: e.offsetX, y: e.offsetY };
+}
+
+// Start drawing
+canvas.addEventListener("mousedown", start);
+canvas.addEventListener("touchstart", start);
+
+function start(e) {
   drawing = true;
   points = [];
-};
+  ctx.beginPath();
+}
 
-canvas.onmouseup = () => drawing = false;
+// Stop drawing
+canvas.addEventListener("mouseup", () => drawing = false);
+canvas.addEventListener("touchend", () => drawing = false);
 
-canvas.onmousemove = (e) => {
+// Draw
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("touchmove", draw);
+
+function draw(e) {
   if (!drawing) return;
 
-  const x = e.offsetX;
-  const y = e.offsetY;
+  const pos = getPos(e);
+  points.push(pos);
 
-  points.push({ x, y });
-
-  ctx.lineWidth = 3;
+  ctx.lineWidth = brushSize.value;
   ctx.lineCap = "round";
 
-  ctx.lineTo(x, y);
+  ctx.lineTo(pos.x, pos.y);
   ctx.stroke();
-};
+}
 
 // Clear canvas
 function clearCanvas() {
@@ -34,24 +59,20 @@ function clearCanvas() {
   ctx.beginPath();
 }
 
-// Save letter drawing
+// Save letter
 function saveGlyph() {
   const char = document.getElementById("charInput").value;
-  if (!char) {
-    alert("Enter a letter!");
-    return;
-  }
+  if (!char) return alert("Enter a letter");
 
   glyphs[char] = [...points];
-  alert(`Saved ${char}`);
   clearCanvas();
+  alert(`Saved ${char}`);
 }
 
-// Convert points to path
+// Convert drawing to path
 function createPath(points) {
   const path = new opentype.Path();
-
-  if (points.length === 0) return path;
+  if (!points.length) return path;
 
   path.moveTo(points[0].x, 200 - points[0].y);
 
@@ -73,14 +94,14 @@ function generateFont() {
       name: char,
       unicode: char.charCodeAt(0),
       advanceWidth: 600,
-      path: path
+      path
     });
 
     glyphArray.push(glyph);
   });
 
   const font = new opentype.Font({
-    familyName: "CustomFont",
+    familyName: "KFont",
     styleName: "Regular",
     unitsPerEm: 1000,
     ascender: 800,
@@ -89,12 +110,12 @@ function generateFont() {
   });
 
   fontBuffer = font.toArrayBuffer();
-
   loadPreview(fontBuffer);
-  alert("Font generated!");
+
+  alert("Font Ready!");
 }
 
-// Load font for preview
+// Load preview font
 function loadPreview(buffer) {
   const blob = new Blob([buffer], { type: "font/ttf" });
   const url = URL.createObjectURL(blob);
@@ -102,34 +123,28 @@ function loadPreview(buffer) {
   const style = document.createElement("style");
   style.innerHTML = `
     @font-face {
-      font-family: "MyFont";
+      font-family: "KFont";
       src: url(${url});
     }
   `;
   document.head.appendChild(style);
 
-  document.getElementById("preview").style.fontFamily = "MyFont";
+  document.getElementById("preview").style.fontFamily = "KFont";
 }
 
 // Download font
 function downloadFont() {
-  if (!fontBuffer) {
-    alert("Generate font first!");
-    return;
-  }
+  if (!fontBuffer) return alert("Generate font first");
 
   const blob = new Blob([fontBuffer], { type: "font/ttf" });
   const link = document.createElement("a");
 
   link.href = URL.createObjectURL(blob);
-  link.download = "MyFont.ttf";
+  link.download = "KFont.ttf";
   link.click();
 }
 
 // Live preview typing
-const input = document.getElementById("textInput");
-const preview = document.getElementById("preview");
-
-input.addEventListener("input", () => {
-  preview.textContent = input.value;
+document.getElementById("textInput").addEventListener("input", e => {
+  document.getElementById("preview").textContent = e.target.value;
 });
