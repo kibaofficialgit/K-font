@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>K-Font Creator</title>
+  <title>Kiba Font Studio</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/opentype.js@latest/dist/opentype.min.js"></script>
 </head>
@@ -9,14 +9,16 @@
 
 <div class="container">
 
-  <h1>🎨 K-Font Creator</h1>
+  <h1 class="logo">KIBA FONT STUDIO</h1>
 
-  <input id="textInput" placeholder="Type preview text..." />
-  <p id="preview">Preview Text</p>
+  <input id="textInput" placeholder="Type your text..." />
+  <div class="preview-box">
+    <p id="preview">Your Custom Text</p>
+  </div>
 
-  <div class="top-controls">
+  <div class="controls">
     <input id="charInput" maxlength="1" placeholder="Letter" />
-    <input type="range" id="brushSize" min="1" max="10" value="3" />
+    <input type="range" id="brushSize" min="1" max="12" value="4" />
     <button onclick="clearCanvas()">Clear</button>
     <button onclick="saveGlyph()">Save</button>
   </div>
@@ -29,7 +31,7 @@
   </div>
 
   <footer>
-    <p>Made with ❤️ by <strong>Kiba Official</strong></p>
+    <p>© 2026 <strong>Kiba Official</strong></p>
   </footer>
 
 </div>
