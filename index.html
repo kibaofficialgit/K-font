@@ -1,59 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kiba Font Studio</title>
+  <title>Kiba Skin Studio</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/opentype.js@latest/dist/opentype.min.js"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-<!-- MENU -->
-<div class="menu">
-  <button onclick="toggleMenu()">⋮</button>
-
-  <div id="dropdown" class="dropdown">
-    <p onclick="openGuide()">Guide</p>
-    <p onclick="toggleTheme()">Toggle Theme</p>
-  </div>
-</div>
-
 <div class="container">
 
-  <h1>KIBA FONT STUDIO</h1>
+  <h1>KIBA SKIN STUDIO</h1>
 
-  <input id="textInput" placeholder="Type preview..." />
-  <p id="preview">Preview</p>
+  <input type="file" id="upload" accept="image/*">
 
-  <input id="charInput" maxlength="1" placeholder="Letter">
-  <input type="range" id="brushSize" min="1" max="12" value="4">
-
-  <div>
+  <div class="tools">
+    <input type="color" id="colorPicker" value="#ff0000">
+    <button onclick="setTool('draw')">Draw</button>
+    <button onclick="setTool('erase')">Erase</button>
     <button onclick="clearCanvas()">Clear</button>
-    <button onclick="saveGlyph()">Save</button>
   </div>
 
   <canvas id="canvas"></canvas>
 
   <div>
-    <button onclick="generateFont()">Generate</button>
-    <button onclick="downloadFont()">Download</button>
+    <button onclick="downloadImage()">Download</button>
+    <button onclick="shareSkin()">Share</button>
   </div>
+
+  <h3>3D Preview</h3>
+  <div id="threeContainer"></div>
+
+  <h3>Community Gallery</h3>
+  <div id="gallery"></div>
 
 </div>
 
-<!-- GUIDE MODAL -->
-<div id="guideModal" class="modal">
-  <div class="modal-content">
-    <h2>Guide</h2>
-    <p>1. Enter a letter</p>
-    <p>2. Draw it</p>
-    <p>3. Click Save</p>
-    <p>4. Generate font</p>
-    <p>5. Download</p>
-    <button onclick="closeGuide()">Close</button>
-  </div>
-</div>
+<!-- Firebase -->
+<script type="module" src="firebase.js"></script>
 
+<!-- App -->
 <script src="app.js"></script>
+
 </body>
 </html>
